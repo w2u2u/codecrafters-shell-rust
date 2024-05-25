@@ -2,11 +2,11 @@
 use std::io::{self, Write};
 use std::{path::Path, process};
 
-struct ShellBuiltin {
+struct ShellCommand {
     name: String,
 }
 
-impl ShellBuiltin {
+impl ShellCommand {
     fn new(name: &str) -> Self {
         Self {
             name: name.to_string(),
@@ -36,7 +36,7 @@ impl ShellBuiltin {
 
 enum Command {
     Echo(String),
-    Type(ShellBuiltin),
+    Type(ShellCommand),
     Exit(i32),
     Unknown(String),
 }
@@ -47,7 +47,7 @@ impl Command {
 
         match cmd {
             Some(("echo", arg)) => Command::Echo(arg.trim().to_string()),
-            Some(("type", arg)) => Command::Type(ShellBuiltin::new(arg.trim())),
+            Some(("type", arg)) => Command::Type(ShellCommand::new(arg.trim())),
             Some(("exit", code)) => Command::Exit(code.trim().parse().unwrap()),
             Some((cmd, _)) => Command::Unknown(cmd.to_string()),
             None => Command::Unknown(input.trim().to_string()),
