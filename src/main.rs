@@ -8,12 +8,17 @@ const EXIT_COMMAND: &str = "exit";
 
 struct ShellCommand {
     name: String,
+    args: Vec<String>,
 }
 
 impl ShellCommand {
-    fn new(name: &str) -> Self {
+    fn new(name: &str, arg: &str) -> Self {
         Self {
             name: name.to_string(),
+            args: arg
+                .split_whitespace()
+                .map(|s| s.to_string())
+                .collect::<Vec<String>>(),
         }
     }
 
@@ -45,7 +50,7 @@ enum Command {
     Echo(String),
     Type(ShellCommand),
     Exit(i32),
-    Unknown(String),
+    External(ShellCommand),
 }
 
 impl Command {
@@ -54,10 +59,10 @@ impl Command {
 
         match cmd {
             Some((ECHO_COMMAND, arg)) => Command::Echo(arg.trim().to_string()),
-            Some((TYPE_COMMAND, arg)) => Command::Type(ShellCommand::new(arg.trim())),
+            Some((TYPE_COMMAND, arg)) => Command::Type(ShellCommand::new(arg.trim(), "")),
             Some((EXIT_COMMAND, code)) => Command::Exit(code.trim().parse().unwrap()),
-            Some((cmd, _)) => Command::Unknown(cmd.to_string()),
-            None => Command::Unknown(input.trim().to_string()),
+            Some((cmd, arg)) => Command::External(ShellCommand::new(cmd, arg)),
+            None => Command::External(ShellCommand::new(input.trim(), "")),
         }
     }
 
@@ -75,7 +80,20 @@ impl Command {
                 }
             }
             Command::Exit(code) => process::exit(*code),
-            Command::Unknown(cmd) => println!("{}: command not found", cmd),
+            Command::External(cmd) => {
+                if cmd.get_path().is_none() {
+                    println!("{}: command not found", cmd.name);
+                    return;
+                }
+
+                let mut child = process::Command::new(&cmd.name)
+                    .args(&cmd.args)
+                    .stdout(std::io::stdout())
+                    .spawn()
+                    .unwrap();
+
+                child.wait().unwrap();
+            }
         }
     }
 }
