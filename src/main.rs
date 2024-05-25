@@ -2,6 +2,10 @@
 use std::io::{self, Write};
 use std::{path::Path, process};
 
+const ECHO_COMMAND: &str = "echo";
+const TYPE_COMMAND: &str = "type";
+const EXIT_COMMAND: &str = "exit";
+
 struct ShellCommand {
     name: String,
 }
@@ -14,7 +18,10 @@ impl ShellCommand {
     }
 
     fn is_shell_builtin(&self) -> bool {
-        matches!(self.name.as_str(), "echo" | "type" | "exit")
+        matches!(
+            self.name.as_str(),
+            ECHO_COMMAND | TYPE_COMMAND | EXIT_COMMAND
+        )
     }
 
     fn get_path(&self) -> Option<String> {
@@ -46,9 +53,9 @@ impl Command {
         let cmd = input.trim().split_once(' ');
 
         match cmd {
-            Some(("echo", arg)) => Command::Echo(arg.trim().to_string()),
-            Some(("type", arg)) => Command::Type(ShellCommand::new(arg.trim())),
-            Some(("exit", code)) => Command::Exit(code.trim().parse().unwrap()),
+            Some((ECHO_COMMAND, arg)) => Command::Echo(arg.trim().to_string()),
+            Some((TYPE_COMMAND, arg)) => Command::Type(ShellCommand::new(arg.trim())),
+            Some((EXIT_COMMAND, code)) => Command::Exit(code.trim().parse().unwrap()),
             Some((cmd, _)) => Command::Unknown(cmd.to_string()),
             None => Command::Unknown(input.trim().to_string()),
         }
