@@ -12,10 +12,9 @@ fn main() {
         let mut input = String::new();
         stdin.read_line(&mut input).unwrap();
 
-        let tokens = input.split_whitespace().collect::<Vec<_>>();
-
-        match tokens[..] {
-            ["exit", code] => process::exit(code.parse::<i32>().unwrap()),
+        match input.split_once(' ') {
+            Some(("echo", msg)) => println!("{}", msg.trim()),
+            Some(("exit", code)) => process::exit(code.trim().parse::<i32>().unwrap()),
             _ => println!("{}: command not found", input.trim()),
         }
     }
