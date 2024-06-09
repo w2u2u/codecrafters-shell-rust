@@ -6,6 +6,7 @@ const ECHO_COMMAND: &str = "echo";
 const TYPE_COMMAND: &str = "type";
 const EXIT_COMMAND: &str = "exit";
 const PWD_COMMAND: &str = "pwd";
+const CD_COMMAND: &str = "cd";
 
 struct ShellCommand {
     name: String,
@@ -26,7 +27,7 @@ impl ShellCommand {
     fn is_shell_builtin(&self) -> bool {
         matches!(
             self.name.as_str(),
-            ECHO_COMMAND | TYPE_COMMAND | EXIT_COMMAND | PWD_COMMAND
+            ECHO_COMMAND | TYPE_COMMAND | EXIT_COMMAND | PWD_COMMAND | CD_COMMAND
         )
     }
 
@@ -52,6 +53,7 @@ enum Command {
     Type(ShellCommand),
     Exit(i32),
     Pwd,
+    Cd(String),
     External(ShellCommand),
 }
 
@@ -64,6 +66,7 @@ impl Command {
             Some((TYPE_COMMAND, arg)) => Command::Type(ShellCommand::new(arg.trim(), "")),
             Some((EXIT_COMMAND, code)) => Command::Exit(code.trim().parse().unwrap()),
             Some((PWD_COMMAND, _)) => Command::Pwd,
+            Some((CD_COMMAND, arg)) => Command::Cd(arg.trim().to_string()),
             Some((cmd, arg)) => Command::External(ShellCommand::new(cmd, arg)),
             None => Command::External(ShellCommand::new(input.trim(), "")),
         }
@@ -85,6 +88,11 @@ impl Command {
             Command::Exit(code) => process::exit(*code),
             Command::Pwd => {
                 println!("{}", std::env::current_dir().unwrap().to_string_lossy());
+            }
+            Command::Cd(path) => {
+                if std::env::set_current_dir(path).is_err() {
+                    println!("cd: {}: No such file or directory", path);
+                }
             }
             Command::External(cmd) => {
                 if cmd.get_path().is_none() {
